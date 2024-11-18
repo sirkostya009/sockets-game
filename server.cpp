@@ -230,10 +230,6 @@ auto handleBeam(SOCKET s, const std::span<char>& buf, const std::span<pollfd>& p
 
 	auto obstacle = std::min_element(obstacles.begin(), obstacles.end(), compare);
 
-	if (obstacle != obstacles.end()) {
-		std::cout << obstacle->symbol << ' ' << (int) obstacle->x << ' ' << (int) obstacle->y << '\n';
-	}
-
 	auto hitPlaya = std::min_element(hitPlayas.begin(), hitPlayas.end(), [playa = playa._Ptr, compare](const state::playa& p1, const state::playa& p2) {
 		return !(&p1 == playa && &p2 != playa) && compare(p1, p2);
 	});
