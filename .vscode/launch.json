@@ -1,0 +1,22 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Build & Run",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/main.exe",
+			"console": "integratedTerminal",
+			"cwd": "${workspaceFolder}",
+			"preLaunchTask": "cl-build"
+		},
+		{
+			"name": "Run",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/main.exe",
+			"console": "integratedTerminal",
+			"cwd": "${workspaceFolder}"
+		}
+	]
+}

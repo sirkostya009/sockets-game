@@ -1,0 +1,31 @@
+{
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "cl-build",
+			"command": "cl.exe",
+			"args": [
+				"/std:c++latest",
+				"/Zi",
+				"/EHsc",
+				"/nologo",
+				"/Fd${workspaceFolder}\\build\\main.pdb",
+				"/Fo${workspaceFolder}\\build\\",
+				"/Fe${workspaceFolder}\\build\\main.exe",
+				"${workspaceFolder}\\client.cpp",
+				"${workspaceFolder}\\server.cpp",
+				"${workspaceFolder}\\state.cpp",
+				"${workspaceFolder}\\main.cpp"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": ["$msCompile"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	],
+	"version": "2.0.0"
+}

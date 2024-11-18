@@ -1,0 +1,8 @@
+x64
+Debug
+Release
+sockets-game
+*.user
+build
+
+.vs
