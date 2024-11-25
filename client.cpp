@@ -7,6 +7,7 @@
 #include <Winuser.h>
 
 #include <iostream>
+#include <map>
 #include <thread>
 
 #pragma comment(lib, "user32.lib")
@@ -15,7 +16,7 @@ static bool drawPlayerboard = false;
 static bool drawCmds = false;
 static char selfSymbol = '\0';
 
-static auto cmdHistory = std::vector<std::string>();
+static auto cmdHistory = std::map<std::string, int>();
 
 auto drawMap() -> void {
 	system("cls");
@@ -31,8 +32,8 @@ auto drawMap() -> void {
 		}
 	} else if (drawCmds) {
 		std::cout << '\n';
-		for (const auto& cmd : cmdHistory) {
-			std::cout << ' ' << cmd << '\n';
+		for (const auto& [cmd, count] : cmdHistory) {
+			std::cout << ' ' << cmd << ": " << count << '\n';
 		}
 	} else {
 		std::cout << "+1234567890123456789012345678901234567890\n";
@@ -57,53 +58,55 @@ auto keyJob(HANDLE h, SOCKET s) -> void {
 		case VK_LEFT:
 			if (!drawPlayerboard) {
 				send(s, "movel", 5, 0);
-				cmdHistory.emplace_back("movel");
+				cmdHistory["movel"]++;
 			}
 			break;
 		case VK_RIGHT:
 			if (!drawPlayerboard) {
 				send(s, "mover", 5, 0);
-				cmdHistory.emplace_back("mover");
+				cmdHistory["mover"]++;
 			}
 			break;
 		case VK_UP:
 			if (!drawPlayerboard) {
 				send(s, "moveu", 5, 0);
-				cmdHistory.emplace_back("moveu");
+				cmdHistory["moveu"]++;
 			}
 			break;
 		case VK_DOWN:
 			if (!drawPlayerboard) {
 				send(s, "moved", 5, 0);
-				cmdHistory.emplace_back("moved");
+				cmdHistory["moved"]++;
 			}
 			break;
 		case VK_HOME:
 			send(s, "beaml", 5, 0);
-			cmdHistory.emplace_back("beaml");
+			cmdHistory["beaml"]++;
 			break;
 		case VK_END:
 			send(s, "beamr", 5, 0);
-			cmdHistory.emplace_back("beamr");
+			cmdHistory["beamr"]++;
 			break;
 		case VK_PRIOR:	// page up
 			send(s, "beamu", 5, 0);
-			cmdHistory.emplace_back("beamu");
+			cmdHistory["beamu"]++;
 			break;
 		case VK_NEXT:  // page down
 			send(s, "beamd", 5, 0);
-			cmdHistory.emplace_back("beamd");
+			cmdHistory["beamd"]++;
 			break;
 		case 'B':
 			send(s, "bomb", 4, 0);
-			cmdHistory.emplace_back("bomb");
+			cmdHistory["bomb"]++;
 			break;
 		case VK_TAB:
 			drawPlayerboard = !drawPlayerboard;
+			drawCmds = false;
 			drawMap();
 			break;
 		case VK_SPACE:
 			drawCmds = !drawCmds;
+			drawPlayerboard = false;
 			drawMap();
 			break;
 		}
