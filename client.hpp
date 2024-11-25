@@ -3,6 +3,6 @@
 
 #include "state.hpp"
 
-auto client(sockaddr_in serverAddr) -> int;
+auto client(sockaddr_in) -> int;
 
 #endif

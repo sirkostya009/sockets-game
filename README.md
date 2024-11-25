@@ -5,6 +5,8 @@
 
 ## Building
 
+Prerequisites: C++23-compatible compiler, like latest MSVC.
+
 - Open a `.sln` file.
 - Build in Visual Studio.
 
@@ -19,3 +21,7 @@ Use arrow keys to move character.
 Use `B` key to denote a bomb (consumes a diamond).
 
 Use `Home`, `End`, `Page Up`, `Page Down` keys to shoot a beam (consumes a diamond).
+
+Use `Tab` to draw playerboard.
+
+Use `Space` to output log.

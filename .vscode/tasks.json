@@ -9,13 +9,10 @@
 				"/Zi",
 				"/EHsc",
 				"/nologo",
-				"/Fd${workspaceFolder}\\build\\main.pdb",
-				"/Fo${workspaceFolder}\\build\\",
-				"/Fe${workspaceFolder}\\build\\main.exe",
-				"${workspaceFolder}\\client.cpp",
-				"${workspaceFolder}\\server.cpp",
-				"${workspaceFolder}\\state.cpp",
-				"${workspaceFolder}\\main.cpp"
+				"/Fd${workspaceFolder}\\Debug\\${workspaceFolderBasename}.pdb",
+				"/Fo${workspaceFolder}\\${workspaceFolderBasename}\\Debug\\",
+				"/Fe${workspaceFolder}\\Debug\\${workspaceFolderBasename}.exe",
+				"${workspaceFolder}\\*.cpp"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}"
@@ -24,6 +21,27 @@
 			"group": {
 				"kind": "build",
 				"isDefault": true
+			}
+		},
+		{
+			"label": "gppbuild",
+			"type": "shell",
+			"command": "g++",
+			"args": [
+				"./*.cpp",
+				"-o",
+				"./build/${workspaceFolderBasename}",
+				"--std=c++23",
+				"-lws2_32",
+				"-luser32"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": false
 			}
 		}
 	],

@@ -12,7 +12,10 @@
 #pragma comment(lib, "user32.lib")
 
 static bool drawPlayerboard = false;
+static bool drawCmds = false;
 static char selfSymbol = '\0';
+
+static auto cmdHistory = std::vector<std::string>();
 
 auto drawMap() -> void {
 	system("cls");
@@ -25,6 +28,11 @@ auto drawMap() -> void {
 				nameBuf[i] = playa.name[i];
 			}
 			std::cout << ' ' << playa.symbol << ' ' << nameBuf << ' ' << playa.diamonds << '\n';
+		}
+	} else if (drawCmds) {
+		std::cout << '\n';
+		for (const auto& cmd : cmdHistory) {
+			std::cout << ' ' << cmd << '\n';
 		}
 	} else {
 		std::cout << "+1234567890123456789012345678901234567890\n";
@@ -47,34 +55,55 @@ auto keyJob(HANDLE h, SOCKET s) -> void {
 
 		switch (ir.Event.KeyEvent.wVirtualKeyCode) {
 		case VK_LEFT:
-			if (!drawPlayerboard) send(s, "movel", 5, 0);
+			if (!drawPlayerboard) {
+				send(s, "movel", 5, 0);
+				cmdHistory.emplace_back("movel");
+			}
 			break;
 		case VK_RIGHT:
-			if (!drawPlayerboard) send(s, "mover", 5, 0);
+			if (!drawPlayerboard) {
+				send(s, "mover", 5, 0);
+				cmdHistory.emplace_back("mover");
+			}
 			break;
 		case VK_UP:
-			if (!drawPlayerboard) send(s, "moveu", 5, 0);
+			if (!drawPlayerboard) {
+				send(s, "moveu", 5, 0);
+				cmdHistory.emplace_back("moveu");
+			}
 			break;
 		case VK_DOWN:
-			if (!drawPlayerboard) send(s, "moved", 5, 0);
+			if (!drawPlayerboard) {
+				send(s, "moved", 5, 0);
+				cmdHistory.emplace_back("moved");
+			}
 			break;
 		case VK_HOME:
 			send(s, "beaml", 5, 0);
+			cmdHistory.emplace_back("beaml");
 			break;
 		case VK_END:
 			send(s, "beamr", 5, 0);
+			cmdHistory.emplace_back("beamr");
 			break;
 		case VK_PRIOR:	// page up
 			send(s, "beamu", 5, 0);
+			cmdHistory.emplace_back("beamu");
 			break;
 		case VK_NEXT:  // page down
 			send(s, "beamd", 5, 0);
+			cmdHistory.emplace_back("beamd");
 			break;
 		case 'B':
 			send(s, "bomb", 4, 0);
+			cmdHistory.emplace_back("bomb");
 			break;
 		case VK_TAB:
 			drawPlayerboard = !drawPlayerboard;
+			drawMap();
+			break;
+		case VK_SPACE:
+			drawCmds = !drawCmds;
 			drawMap();
 			break;
 		}
@@ -159,10 +188,6 @@ auto loop(SOCKET sock) -> int {
 
 					oldMap[y][x] = '.';
 					state::map[y][x] = '@';
-
-					std::erase_if(state::mapObjects, [x, y](state::map_object mo) {
-						return mo.x == x && mo.y == y;
-					});
 				}
 			}
 
@@ -249,7 +274,6 @@ auto loop(SOCKET sock) -> int {
 }
 
 auto client(sockaddr_in serverAddr) -> int {
-	state::mapObjects.clear();
 	auto inetBuf = std::array<char, INET6_ADDRSTRLEN>();
 	inet_ntop(serverAddr.sin_family, &serverAddr.sin_addr, inetBuf.data(), inetBuf.size());
 	std::cout << "connecting to server on port " << inetBuf.data() << ':' << htons(serverAddr.sin_port) << '\n';
@@ -261,7 +285,7 @@ auto client(sockaddr_in serverAddr) -> int {
 		return -1;
 	}
 
-	// ping + symbol + len + name
+	// "ping" + symbol + len + name
 	auto ping = std::array<char, 4 + 2 + state::MAX_NAME_LEN>{
 		'p',
 		'i',
@@ -294,22 +318,18 @@ auto client(sockaddr_in serverAddr) -> int {
 
 	for (int i = 0; buf[i] != '\0'; ++i) {
 		switch (buf[i]) {
-		case 'o':
-			state::mapObjects.emplace_back(state::map_object::unpack(&buf[i + 1]));
-			break;
-		case 'p':
-			state::playaHaters.emplace_back(&buf[i + 1]);
+		case 'o': {
+			auto mapObject = state::map_object::unpack(&buf[i + 1]);
+			state::map[mapObject.y][mapObject.x] = mapObject.symbol;
 			break;
 		}
+		case 'p': {
+			auto& playa = state::playaHaters.emplace_back(&buf[i + 1]);
+			state::map[playa.y][playa.x] = playa.symbol;
+			break;
+		}
+		}
 		for (i; buf[i] != '\n'; ++i);
-	}
-
-	for (const auto& mapObject : state::mapObjects) {
-		state::map[mapObject.y][mapObject.x] = mapObject.is ? mapObject.symbol : '.';
-	}
-
-	for (const auto& playa : state::playaHaters) {
-		state::map[playa.y][playa.x] = playa.symbol;
 	}
 
 	drawMap();

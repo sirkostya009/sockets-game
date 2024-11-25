@@ -28,10 +28,15 @@ namespace state {
 
 		// playa(const playa& p) = delete;
 
+		// playa(playa&& other)
+		// 	: sock(other.sock), diamonds(other.diamonds), namelen(other.namelen), symbol(other.symbol), x(other.x), y(other.y), name(other.name) {
+		// 	other.name = nullptr;
+		// }
+
 		playa(SOCKET s, char symbol, char namelen, const char* name);
 
 		playa(const char* buf)
-			: diamonds(ntohs(*((short*) buf))), namelen(buf[2]), symbol(buf[3]), x(buf[4]), y(buf[5]), name(new char[namelen + 1]) {
+			: diamonds(ntohs(*(short*) buf)), namelen(buf[2]), symbol(buf[3]), x(buf[4]), y(buf[5]), name(new char[namelen + 1]{}) {
 			strncpy(name, buf + 6, namelen);
 		}
 
@@ -78,10 +83,9 @@ namespace state {
 
 	struct map_object {
 		char symbol, x, y;
-		bool is;
 
-		auto pack() -> std::array<char, 4> {
-			return {this->symbol, this->x, this->y, this->is};
+		auto pack() -> std::array<char, 3> {
+			return {this->symbol, this->x, this->y};
 		}
 
 		static auto unpack(char* buf) -> map_object {
@@ -89,72 +93,7 @@ namespace state {
 		}
 	};
 
-	static inline auto mapObjects = std::vector<map_object>{
-		{.symbol = '*', .x = 5, .y = 1, .is = true},
-		{.symbol = '#', .x = 16, .y = 3, .is = true},
-		{.symbol = '#', .x = 17, .y = 3, .is = true},
-		{.symbol = '#', .x = 18, .y = 3, .is = true},
-		{.symbol = '#', .x = 19, .y = 3, .is = true},
-		{.symbol = '#', .x = 20, .y = 3, .is = true},
-		{.symbol = '#', .x = 21, .y = 3, .is = true},
-		{.symbol = '#', .x = 22, .y = 3, .is = true},
-		{.symbol = '#', .x = 23, .y = 3, .is = true},
-		{.symbol = '#', .x = 24, .y = 3, .is = true},
-		{.symbol = '#', .x = 25, .y = 3, .is = true},
-		{.symbol = '#', .x = 26, .y = 3, .is = true},
-		{.symbol = '#', .x = 27, .y = 3, .is = true},
-		{.symbol = '*', .x = 33, .y = 4, .is = true},
-		{.symbol = '#', .x = 7, .y = 6, .is = true},
-		{.symbol = '#', .x = 8, .y = 6, .is = true},
-		{.symbol = '#', .x = 9, .y = 6, .is = true},
-		{.symbol = '#', .x = 10, .y = 6, .is = true},
-		{.symbol = '#', .x = 11, .y = 6, .is = true},
-		{.symbol = '#', .x = 12, .y = 7, .is = true},
-		{.symbol = '#', .x = 13, .y = 8, .is = true},
-		{.symbol = '#', .x = 18, .y = 8, .is = true},
-		{.symbol = '#', .x = 19, .y = 8, .is = true},
-		{.symbol = '#', .x = 20, .y = 8, .is = true},
-		{.symbol = '#', .x = 21, .y = 8, .is = true},
-		{.symbol = '#', .x = 22, .y = 8, .is = true},
-		{.symbol = '#', .x = 23, .y = 8, .is = true},
-		{.symbol = '#', .x = 24, .y = 8, .is = true},
-		{.symbol = '#', .x = 25, .y = 8, .is = true},
-		{.symbol = '#', .x = 26, .y = 8, .is = true},
-		{.symbol = '#', .x = 27, .y = 8, .is = true},
-		{.symbol = '#', .x = 28, .y = 8, .is = true},
-		{.symbol = '#', .x = 29, .y = 8, .is = true},
-		{.symbol = '#', .x = 14, .y = 9, .is = true},
-		{.symbol = '*', .x = 4, .y = 10, .is = true},
-		{.symbol = '#', .x = 15, .y = 10, .is = true},
-		{.symbol = '#', .x = 25, .y = 10, .is = true},
-		{.symbol = '#', .x = 26, .y = 10, .is = true},
-		{.symbol = '#', .x = 27, .y = 10, .is = true},
-		{.symbol = '#', .x = 28, .y = 10, .is = true},
-		{.symbol = '#', .x = 16, .y = 11, .is = true},
-		{.symbol = '#', .x = 17, .y = 12, .is = true},
-		{.symbol = '#', .x = 18, .y = 13, .is = true},
-		{.symbol = '#', .x = 34, .y = 13, .is = true},
-		{.symbol = '#', .x = 35, .y = 13, .is = true},
-		{.symbol = '#', .x = 36, .y = 13, .is = true},
-		{.symbol = '#', .x = 37, .y = 13, .is = true},
-		{.symbol = '*', .x = 8, .y = 14, .is = true},
-		{.symbol = '#', .x = 19, .y = 14, .is = true},
-		{.symbol = '#', .x = 20, .y = 15, .is = true},
-		{.symbol = '*', .x = 29, .y = 15, .is = true},
-		{.symbol = '#', .x = 2, .y = 17, .is = true},
-		{.symbol = '#', .x = 3, .y = 17, .is = true},
-		{.symbol = '#', .x = 4, .y = 17, .is = true},
-		{.symbol = '#', .x = 5, .y = 17, .is = true},
-		{.symbol = '#', .x = 6, .y = 17, .is = true},
-		{.symbol = '#', .x = 7, .y = 17, .is = true},
-		{.symbol = '#', .x = 8, .y = 17, .is = true},
-		{.symbol = '#', .x = 9, .y = 17, .is = true},
-		{.symbol = '#', .x = 10, .y = 17, .is = true},
-		{.symbol = '#', .x = 11, .y = 17, .is = true},
-		{.symbol = '#', .x = 12, .y = 17, .is = true},
-		{.symbol = '#', .x = 13, .y = 17, .is = true},
-		{.symbol = '*', .x = 28, .y = 18, .is = true},
-	};
+	static inline auto mapObjects = std::vector<map_object>();
 
 	constexpr auto udpPort = 7777;
 

@@ -5,7 +5,7 @@
 			"name": "Build & Run",
 			"type": "cppvsdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/build/main.exe",
+			"program": "${workspaceFolder}/Debug/${workspaceFolderBasename}.exe",
 			"console": "integratedTerminal",
 			"cwd": "${workspaceFolder}",
 			"preLaunchTask": "cl-build"
@@ -14,7 +14,7 @@
 			"name": "Run",
 			"type": "cppvsdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/build/main.exe",
+			"program": "${workspaceFolder}/Debug/${workspaceFolderBasename}.exe",
 			"console": "integratedTerminal",
 			"cwd": "${workspaceFolder}"
 		}

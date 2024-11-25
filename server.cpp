@@ -5,6 +5,7 @@
 #include <WS2tcpip.h>
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <thread>
@@ -127,7 +128,7 @@ auto handleMove(SOCKET s, const std::span<char>& buf, const std::span<pollfd>& p
 	}
 
 	auto playaCollider = [&playa, x, y](const state::playa& p) {
-		return (playa._Ptr != &p) && p.x == x && p.y == y;
+		return (&*playa != &p) && p.x == x && p.y == y;
 	};
 
 	if (std::vector<state::playa>::iterator obj; (obj = std::find_if(state::playaHaters.begin(), state::playaHaters.end(), playaCollider)) != state::playaHaters.end()) {
@@ -171,7 +172,7 @@ auto handleChatEntry(SOCKET s, const std::span<char>& buf, const std::span<pollf
 		return;
 	}
 
-	auto message = std::vector<char>{'c', 'h', 'a', 't', playa->symbol};
+	auto message = std::vector{'c', 'h', 'a', 't', playa->symbol};
 	message.append_range(buf.subspan(5));
 	dispatchToPlayas(message);
 }
@@ -230,26 +231,18 @@ auto handleBeam(SOCKET s, const std::span<char>& buf, const std::span<pollfd>& p
 
 	auto obstacle = std::min_element(obstacles.begin(), obstacles.end(), compare);
 
-	auto hitPlaya = std::min_element(hitPlayas.begin(), hitPlayas.end(), [playa = playa._Ptr, compare](const state::playa& p1, const state::playa& p2) {
+	auto hitPlaya = std::min_element(hitPlayas.begin(), hitPlayas.end(), [playa = &*playa, compare](const state::playa& p1, const state::playa& p2) {
 		return !(&p1 == playa && &p2 != playa) && compare(p1, p2);
 	});
 
 	// beamer, direction, endX, endY
-	auto isHitPlayaDead = false;
 	auto msg = std::array{'b', 'e', 'a', 'm', playa->symbol, direction, char(direction == 'r' ? 40 : -1), char(direction == 'd' ? 20 : -1)};
 	if (hitPlaya != hitPlayas.end() && (obstacle == obstacles.end() || distance(*hitPlaya) < distance(*obstacle))) {  // if playa is closer than to the obstacle, kill them
-		isHitPlayaDead = true;
 		msg[6] = hitPlaya->x;
 		msg[7] = hitPlaya->y;
-	} else if (obstacle != obstacles.end()) {
-		msg[6] = obstacle->x;
-		msg[7] = obstacle->y;
-	}
 
-	dispatchToPlayas(msg);
-	if (isHitPlayaDead) {
+		send(hitPlaya->sock, msg.data(), msg.size(), 0);
 		auto killMsg = std::array{'k', 'i', 'l', 'l', hitPlaya->symbol};
-		dispatchToPlayas(killMsg);
 		std::erase_if(state::playaHaters, [&hitPlaya](const state::playa& playa) {
 			if (playa.sock == hitPlaya->sock) {
 				shutdown(playa.sock, SD_SEND);
@@ -257,7 +250,13 @@ auto handleBeam(SOCKET s, const std::span<char>& buf, const std::span<pollfd>& p
 			}
 			return false;
 		});
+		dispatchToPlayas(killMsg);
+	} else if (obstacle != obstacles.end()) {
+		msg[6] = obstacle->x;
+		msg[7] = obstacle->y;
 	}
+
+	dispatchToPlayas(msg);
 }
 
 auto handleBomb(SOCKET s, const std::span<pollfd>& pfds) -> void {
@@ -290,7 +289,7 @@ auto handleBomb(SOCKET s, const std::span<pollfd>& pfds) -> void {
 			});
 
 			for (auto& p : state::playaHaters) {
-				if (playa._Ptr != &p && p.x == x && p.y == y) {
+				if (&*playa != &p && p.x == x && p.y == y) {
 					killedPlayas.emplace_back(&p);
 				}
 			}
@@ -298,7 +297,7 @@ auto handleBomb(SOCKET s, const std::span<pollfd>& pfds) -> void {
 	}
 
 	if (killedPlayas.size() > 0) {
-		for (const auto& playa : killedPlayas) {
+		for (auto* playa : killedPlayas) {
 			auto killMsg = std::array{'k', 'i', 'l', 'l', playa->symbol};
 
 			dispatchToPlayas(killMsg);
@@ -310,6 +309,14 @@ auto handleBomb(SOCKET s, const std::span<pollfd>& pfds) -> void {
 	dispatchToPlayas(buf);
 }
 
+auto logTcp(SOCKET s, const std::span<char>& buf) -> void {
+	std::cout << "tcp: " << s << ": ";
+	for (int i = 0; i < buf.size(); ++i) {
+		std::cout << buf[i];
+	}
+	std::cout << '\n';
+}
+
 // tcp is used for all of the user commands
 auto handleTcp(SOCKET s, const std::span<pollfd>& pfds) -> void {
 	auto buf = receive(s);
@@ -317,7 +324,7 @@ auto handleTcp(SOCKET s, const std::span<pollfd>& pfds) -> void {
 		std::cerr << "read failed for " << s << '\n';
 		return;
 	}
-	std::cout << "tcp: " << buf.data() << '\n';
+	logTcp(s, buf);
 
 	if (cmd("ping")) {
 		handlePing(s, buf, pfds);
@@ -392,7 +399,78 @@ auto loop(SOCKET tcp, SOCKET udp) -> int {
 	return 0;
 }
 
+auto generateMap() -> std::vector<state::map_object> {
+	return {
+		{.symbol = '*', .x = 5, .y = 1},
+		{.symbol = '#', .x = 16, .y = 3},
+		{.symbol = '#', .x = 17, .y = 3},
+		{.symbol = '#', .x = 18, .y = 3},
+		{.symbol = '#', .x = 19, .y = 3},
+		{.symbol = '#', .x = 20, .y = 3},
+		{.symbol = '#', .x = 21, .y = 3},
+		{.symbol = '#', .x = 22, .y = 3},
+		{.symbol = '#', .x = 23, .y = 3},
+		{.symbol = '#', .x = 24, .y = 3},
+		{.symbol = '#', .x = 25, .y = 3},
+		{.symbol = '#', .x = 26, .y = 3},
+		{.symbol = '#', .x = 27, .y = 3},
+		{.symbol = '*', .x = 33, .y = 4},
+		{.symbol = '#', .x = 7, .y = 6},
+		{.symbol = '#', .x = 8, .y = 6},
+		{.symbol = '#', .x = 9, .y = 6},
+		{.symbol = '#', .x = 10, .y = 6},
+		{.symbol = '#', .x = 11, .y = 6},
+		{.symbol = '#', .x = 12, .y = 7},
+		{.symbol = '#', .x = 13, .y = 8},
+		{.symbol = '#', .x = 18, .y = 8},
+		{.symbol = '#', .x = 19, .y = 8},
+		{.symbol = '#', .x = 20, .y = 8},
+		{.symbol = '#', .x = 21, .y = 8},
+		{.symbol = '#', .x = 22, .y = 8},
+		{.symbol = '#', .x = 23, .y = 8},
+		{.symbol = '#', .x = 24, .y = 8},
+		{.symbol = '#', .x = 25, .y = 8},
+		{.symbol = '#', .x = 26, .y = 8},
+		{.symbol = '#', .x = 27, .y = 8},
+		{.symbol = '#', .x = 28, .y = 8},
+		{.symbol = '#', .x = 29, .y = 8},
+		{.symbol = '#', .x = 14, .y = 9},
+		{.symbol = '*', .x = 4, .y = 10},
+		{.symbol = '#', .x = 15, .y = 10},
+		{.symbol = '#', .x = 25, .y = 10},
+		{.symbol = '#', .x = 26, .y = 10},
+		{.symbol = '#', .x = 27, .y = 10},
+		{.symbol = '#', .x = 28, .y = 10},
+		{.symbol = '#', .x = 16, .y = 11},
+		{.symbol = '#', .x = 17, .y = 12},
+		{.symbol = '#', .x = 18, .y = 13},
+		{.symbol = '#', .x = 34, .y = 13},
+		{.symbol = '#', .x = 35, .y = 13},
+		{.symbol = '#', .x = 36, .y = 13},
+		{.symbol = '#', .x = 37, .y = 13},
+		{.symbol = '*', .x = 8, .y = 14},
+		{.symbol = '#', .x = 19, .y = 14},
+		{.symbol = '#', .x = 20, .y = 15},
+		{.symbol = '*', .x = 29, .y = 15},
+		{.symbol = '#', .x = 2, .y = 17},
+		{.symbol = '#', .x = 3, .y = 17},
+		{.symbol = '#', .x = 4, .y = 17},
+		{.symbol = '#', .x = 5, .y = 17},
+		{.symbol = '#', .x = 6, .y = 17},
+		{.symbol = '#', .x = 7, .y = 17},
+		{.symbol = '#', .x = 8, .y = 17},
+		{.symbol = '#', .x = 9, .y = 17},
+		{.symbol = '#', .x = 10, .y = 17},
+		{.symbol = '#', .x = 11, .y = 17},
+		{.symbol = '#', .x = 12, .y = 17},
+		{.symbol = '#', .x = 13, .y = 17},
+		{.symbol = '*', .x = 28, .y = 18},
+	};
+}
+
 auto server() -> int {
+	state::mapObjects = generateMap();
+
 	auto udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	auto addr = sockaddr_in{
