@@ -18,7 +18,7 @@ Run multiple instances of the program.
 
 Use arrow keys to move character.
 
-Use `B` key to denote a bomb (consumes a diamond).
+Use `B` key to detonate a bomb (consumes a diamond).
 
 Use `Home`, `End`, `Page Up`, `Page Down` keys to shoot a beam (consumes a diamond).
 

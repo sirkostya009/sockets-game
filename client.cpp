@@ -3,12 +3,13 @@
 #include "client.hpp"
 
 #include <WS2tcpip.h>
-#include <WinSock2.h>
 #include <Winuser.h>
 
 #include <iostream>
 #include <map>
 #include <thread>
+
+#include "state.hpp"
 
 #pragma comment(lib, "user32.lib")
 
@@ -48,9 +49,7 @@ auto keyJob(HANDLE h, SOCKET s) -> void {
 	for (auto ir = INPUT_RECORD{};;) {
 		ReadConsoleInput(h, &ir, 1, &numRead);
 
-		if (ir.EventType != KEY_EVENT || !ir.Event.KeyEvent.bKeyDown) {
-			continue;
-		}
+		if (ir.EventType != KEY_EVENT || !ir.Event.KeyEvent.bKeyDown) continue;
 
 		// TODO: implement chat
 

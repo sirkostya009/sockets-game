@@ -6,10 +6,10 @@
 
 #include <algorithm>
 #include <cmath>
-#include <functional>
 #include <iostream>
-#include <thread>
 #include <vector>
+
+#include "state.hpp"
 
 static short listeningPort;
 
