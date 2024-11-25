@@ -53,19 +53,20 @@ auto handlePing(SOCKET s, const std::span<char>& buf, const std::span<pollfd>& p
 
 	auto outBuf = std::vector<char>();
 
-	outBuf.reserve((5 + 2 + state::MAX_NAME_LEN) * state::playaHaters.size() + (4 + 2) * state::mapObjects.size());
+	outBuf.reserve((5 + 2 + state::MAX_NAME_LEN) * state::playaHaters.size() + (3 + 2) * state::mapObjects.size() + 1);
 
-	auto pack = [&outBuf](char prefix, auto& container) {
-		for (auto it = container.begin(); it < container.end(); ++it) {
-			outBuf.emplace_back(prefix);
-			outBuf.append_range(it->pack());
-			outBuf.emplace_back('\n');
-		}
-	};
+#define pack(prefix, container)                                     \
+	for (auto it = container.begin(); it < container.end(); ++it) { \
+		outBuf.emplace_back(prefix);                                \
+		outBuf.append_range(it->pack());                            \
+		outBuf.emplace_back('\n');                                  \
+	}
 
 	pack('p', state::playaHaters);
 	pack('o', state::mapObjects);
 	outBuf.emplace_back(0);
+
+#undef pack
 
 	auto sent = 0;
 	do {
